@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.shsxt.crm.dao.UserMapper">
+    <resultMap id="BaseResultMap" type="com.shsxt.crm.dto.UserDto">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/>
+        <result column="user_pwd" property="userPwd" jdbcType="VARCHAR"/>
+        <result column="true_name" property="trueName" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="is_valid" property="isValid" jdbcType="INTEGER"/>
+        <result column="create_date" property="createDate" jdbcType="TIMESTAMP"/>
+        <result column="update_date" property="updateDate" jdbcType="TIMESTAMP"/>
+        <result column="role_name" property="roleName"></result>
+        <result column="roleIdStr" property="roleIdStr"></result>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, user_name, user_pwd, true_name, email, phone, is_valid, create_date, update_date
+  </sql>
+    <select id="queryById" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        SELECT u.*,
+        GROUP_CONCAT(r.role_name) role_name,GROUP_CONCAT(r.id) roleIdStr
+        from t_user u
+        LEFT JOIN t_user_role ur on u.id=ur.user_id
+        LEFT JOIN t_role r on ur.role_id=r.id
+        where u.id = #{id}
+        and u.is_valid=1
+        GROUP BY u.id
+    </select>
+    <insert id="save" parameterType="com.shsxt.crm.po.User" useGeneratedKeys="true" keyProperty="id">
+        insert into t_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="userName != null">
+                user_name,
+            </if>
+            <if test="userPwd != null">
+                user_pwd,
+            </if>
+            <if test="trueName != null">
+                true_name,
+            </if>
+            <if test="email != null">
+                email,
+            </if>
+            <if test="phone != null">
+                phone,
+            </if>
+            <if test="isValid != null">
+                is_valid,
+            </if>
+            <if test="createDate != null">
+                create_date,
+            </if>
+            <if test="updateDate != null">
+                update_date,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="userName != null">
+                #{userName,jdbcType=VARCHAR},
+            </if>
+            <if test="userPwd != null">
+                #{userPwd,jdbcType=VARCHAR},
+            </if>
+            <if test="trueName != null">
+                #{trueName,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="isValid != null">
+                #{isValid,jdbcType=INTEGER},
+            </if>
+            <if test="createDate != null">
+                #{createDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateDate != null">
+                #{updateDate,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="update" parameterType="com.shsxt.crm.po.User">
+
+
+        update t_user
+        <set>
+            <if test="userName != null">
+                user_name = #{userName,jdbcType=VARCHAR},
+            </if>
+            <if test="userPwd != null">
+                user_pwd = #{userPwd,jdbcType=VARCHAR},
+            </if>
+            <if test="trueName != null">
+                true_name = #{trueName,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null">
+                email = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null">
+                phone = #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="isValid != null">
+                is_valid = #{isValid,jdbcType=INTEGER},
+            </if>
+            <if test="createDate != null">
+                create_date = #{createDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateDate != null">
+                update_date = #{updateDate,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="delete" parameterType="int">
+    UPDATE t_user SET is_valid=0 WHERE id=#{id}
+    </update>
+    <!--通过用户名查询用户-->
+    <select id="queryUserByName" parameterType="string" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_user
+        where is_valid=1 and user_name = #{userName}
+    </select>
+    <update id="updateUserPwd">
+    update t_user set user_pwd=#{userPwd} where id=#{id}
+  </update>
+    <select id="queryCustomerManagers" resultType="map">
+        select u.true_name as trueName,
+        u.id from t_user as u left join t_user_role as ur on
+        ur.user_id = u.id where u.is_valid =1 and ur.role_id = 3;
+    </select>
+    <select id="queryByParams" parameterType="userQuery" resultMap="BaseResultMap">
+        SELECT u.*,
+        GROUP_CONCAT(r.role_name) role_name,GROUP_CONCAT(r.id) roleIdStr
+        from t_user u
+        LEFT JOIN t_user_role ur on u.id=ur.user_id
+        LEFT JOIN t_role r on ur.role_id=r.id
+        <where>
+            u.is_valid = 1
+            <if test="null!=userName and ''!=userName">
+                and u.user_name like concat('%',#{userName},'%')
+            </if>
+            <if test="null!=email and ''!=email">
+                and u.email like concat('%',#{email},'%')
+            </if>
+            <if test="null!=phone and ''!=phone">
+                and u.phone like concat('%',#{phone},'%')
+            </if>
+        </where>
+        GROUP BY u.id
+    </select>
+    <!--通过用户id查询权限码-->
+    <select id="queryAllOptValueByUserId" parameterType="int" resultType="string">
+        SELECT DISTINCT
+        p.acl_value
+        FROM
+        t_permission AS p
+        RIGHT JOIN t_user_role AS ur ON ur.role_id = p.role_id
+        WHERE
+        ur.user_id = #{userId}
+    </select>
+</mapper>
